@@ -89,6 +89,8 @@
 #endif
 #endif
 
+#include "src/Hajo/Hajo.h"
+
 ConfigManager& configManager = ConfigManager::getInstance();
 MQTT_Client& mqtt = MQTT_Client::getInstance();
 Radio& radio = Radio::getInstance();
@@ -172,6 +174,13 @@ void setup()
   }
   
   printControls();
+
+  // Show if there is PSRAM available -hajo-
+  // T-BEAM V1 has !
+  Log::console(PSTR("Total heap: %d"), ESP.getHeapSize());
+  Log::console(PSTR("Free heap: %d"), ESP.getFreeHeap());
+  Log::console(PSTR("Total PSRAM: %d"), ESP.getPsramSize());
+  Log::console(PSTR("Free PSRAM: %d"), ESP.getFreePsram());
 }
 
 void loop() {  
@@ -215,6 +224,10 @@ void loop() {
     displayShowStaMode(configManager.isApMode());
     return;
   }
+
+  // hajo Batteriespannung messen
+  //Hajo::vBat();
+  HajoSat::control();
 
   // connected
 
