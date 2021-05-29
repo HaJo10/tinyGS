@@ -12,10 +12,7 @@
 #include <sgp4pred.h>
 
 
-
 extern Status status;
-
-
 
 
 class HajoSat 
@@ -23,6 +20,8 @@ class HajoSat
     public:
         static void control();      // Steuerung der Aufrufe Bat-Control, Sat-Auwahl, Sat-Daten nachladen
         static void vBat();
+        static void readAXP192();
+        static void readAnaloginput();
 };
 
 #endif
