@@ -3,6 +3,7 @@
 */
 
 #include "Hajo.h"
+#include "Hajo_Bat.h"
 #include "../Logger/Logger.h"
 #include "driver/gpio.h"
 #include "driver/adc.h"
