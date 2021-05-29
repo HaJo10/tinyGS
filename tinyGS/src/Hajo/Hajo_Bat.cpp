@@ -14,13 +14,15 @@ byte        mode              = 'u';
 
 
 
-void HajoSat::vBat(){
+void HajoSat::vBat(int boardNr){
 
-        if ( boardNr == 14 ) {      // 14 = T-Beam
-            readAXP192();
-        } else {
-            readAnaloginput();
-        };
+    Log::console(PSTR ("boardNr: %u"), boardNr );
+
+    if ( boardNr == 14 ) {      // 14 = T-Beam
+        readAXP192();
+    } else {
+        readAnaloginput();
+    };
     
 }
 

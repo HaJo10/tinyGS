@@ -2,4 +2,4 @@
 *   Definitionen
 */
 
-uint8_t  boardNr    = ConfigManager::getInstance().getBoard();
+int         boardNr    = 99;
