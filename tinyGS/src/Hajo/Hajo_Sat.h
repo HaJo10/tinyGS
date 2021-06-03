@@ -72,11 +72,12 @@ struct Scedule {
     struct      Scedule* next;  
 };
 
+// scedule times for checks
+double      nextScedTime = 0;
+double      actScedEnd   = 0;
 
 class HajoSat
 {
-        
-
     private:
 
     public:

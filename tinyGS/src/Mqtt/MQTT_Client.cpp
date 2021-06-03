@@ -301,6 +301,9 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
 {
   Radio &radio = Radio::getInstance();
 
+  Log::console(PSTR("manageMQTTData topic  : %s"), topic);
+  Log::console(PSTR("manageMQTTData payload: %s"), payload);
+
   bool global = true;
   char *command;
   strtok(topic, "/");                      // tinygs

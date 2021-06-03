@@ -2,7 +2,7 @@
  *  Automatische Ermittlung des 'nächsten' Satelliten der gehört werden soll
  */
 
-#include "autoSat.h"
+#include "Hajo_Sat.h"
 #include "../Logger/Logger.h"
 #include "StringSplitter.h"
 
@@ -56,12 +56,11 @@ struct      Scedule*    scedRear  = NULL;
 #include <sys/time.h>
 #include <ctime> 
 
-double      nextScedTime = 0;
 time_t      jetzt;
 
 void HajoSat::autoSat() {
     // TLE's laden
-    return;
+    
     jetzt = time(NULL);
     
     if (last_tle_read_time_ms == 0) {
@@ -126,28 +125,45 @@ void HajoSat::sceduleNextSat() {
         sceduleSat();
     }
 
-
-    if ( scedFront->overpass.jdstartUTC < jetzt ) sceduleSat();
+    if ( scedFront->overpass.jdstartUTC < jetzt ){
+        sceduleSat();
+    }
 }
 
 void HajoSat::sceduleSat() {
+    struct  tm timeinfo1;
+    struct  tm timeinfo2;
+
+    timeinfo1 = *gmtime(&jetzt);
+    timeinfo2 = *gmtime(&scedFront->overpass.jdstartUTC);
+    Log::console(PSTR("jetzt/sced : %u %u"), jetzt, scedFront->overpass.jdstartUTC );
+    Log::console(PSTR("jetzt/sced UTC: %s"), asctime(&timeinfo1), asctime(&timeinfo2) );
+
+    if ( scedFront->satAdr == NULL ) {
+        Log::console(PSTR("sceduleSat : satAdr = NULL"));
+        return;
+    }
 
     // void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int length)
     // topic: tinygs/1705665548/DE_72116_433_2/cmnd/begin
-    char    topic[44] = "tinygs/1705665548/DE_72116_433_2/cmnd/begin";
+    char    topic[46] = "tinygs/1705665548/DE_72116_433_2/cmnd/begine\0";
     unsigned int  laenge;
     struct Satellite* tempSat = scedFront->satAdr;
 
-    char para[200]   ;
-    strcpy(para, tempSat->params);
-    uint8_t paraAdr = para[0];
-
     laenge = strlen(tempSat->params);
-    Log::console(PSTR("Länge: %u"), laenge);
-    Log::console(PSTR("Länge: %s"), tempSat->params);
 
-    //MQTT_Client::callRemoteSatCmd( topic, *tempSat->params, laenge );
-    //MQTT_Client::getInstance().callRemoteSatCmd(topic, paraAdr, laenge);
+    char    para[200]   ;
+    strcpy(para, tempSat->params);
+    para[laenge] = '\0';
+    
+    uint8_t * payload;
+
+    payload = reinterpret_cast<uint8_t *>(static_cast<char *>(para));
+    
+    Log::console(PSTR("Länge: %u"), laenge);
+    Log::console(PSTR("neue params: %s"), tempSat->params);
+
+    MQTT_Client::getInstance().manageMQTTData(topic, payload, laenge);
 
     nextScedTime = scedFront->overpass.jdstartUTC;
 
@@ -467,7 +483,7 @@ void HajoSat::predict(int many, char * satNoChar, Satellite* satAct){
     bool error;
     unsigned long start = millis();
     for (int i = 0; i<many ; i++){
-        error = sat.nextpass(&overpass,20);     //search for the next overpass, if there are more than 20 maximums below the horizon it returns false
+        error = sat.nextpass(&overpass, 10);     //search for the next overpass, if there are more than 20 maximums below the horizon it returns false
         delay(0);
         
         if ( error == 1){ //no error, prints overpass information
@@ -484,6 +500,7 @@ void HajoSat::predict(int many, char * satNoChar, Satellite* satAct){
           invjday(overpass.jdstop ,timezone ,true , year, mon, day, hr, minute, sec);
           Serial.println("  Stop: az=" + String(overpass.azstop) + "° " + String(hr) + ':' + String(minute) + ':' + String(sec));
          }
+         /*
           switch(overpass.transit){
               case none:
                   break;
@@ -506,7 +523,7 @@ void HajoSat::predict(int many, char * satNoChar, Satellite* satAct){
               case daylight:
                   Serial.println("  Daylight");
                   break;
-          }
+          } */
   
             strcpy(nextPasses[passes].satNum, satNoChar);
             nextPasses[passes].overpass = overpass;
