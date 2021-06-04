@@ -146,7 +146,8 @@ void HajoSat::sceduleSat() {
 
     // void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int length)
     // topic: tinygs/1705665548/DE_72116_433_2/cmnd/begin
-    char    topic[46] = "tinygs/1705665548/DE_72116_433_2/cmnd/begine\0";
+    //char    topic[46] = "tinygs/1705665548/DE_72116_433_2/cmnd/begine\0";
+    char    topic[46] = "tinygs/1705665548/DE_72116_433_2/cmnd/beginH\0";
     unsigned int  laenge;
     struct Satellite* tempSat = scedFront->satAdr;
 
@@ -166,6 +167,7 @@ void HajoSat::sceduleSat() {
     MQTT_Client::getInstance().manageMQTTData(topic, payload, laenge);
 
     nextScedTime = scedFront->overpass.jdstartUTC;
+    ongoingpass  = scedFront->overpass;
 
     // scedule löschen
     Scedule* delNode    = scedFront;
@@ -199,6 +201,7 @@ void HajoSat::setSceduleTable() {
 
         Passes* nextNode    = nextSat->frontPass;
         nextSat->frontPass  = nextSat->frontPass->next;
+        nextSat->anzPasses  = nextSat->anzPasses -1;
         delete nextNode;
     }  
 }
@@ -345,7 +348,7 @@ void HajoSat::printAllSatInfo() {
         Log::console(PSTR("tle0: %s \n"), temp->tle.satNam);
         Log::console(PSTR("tle1: %s \n"), temp->tle.line1);
         Log::console(PSTR("tle2: %s \n"), temp->tle.line2);
-
+        Log::console(PSTR("anz pass: %d \n"), temp->anzPasses); 
         Log::console(PSTR("pass: %d \n"), temp->frontPass);
         if ( temp->frontPass ) {
             printPassInfo( temp->frontPass );
@@ -563,4 +566,5 @@ void HajoSat::enqueuePass(passinfo* overpass, Satellite* satAct) {
 	}
 	satAct->rearPass->next = temp;
 	satAct->rearPass = temp;
+    satAct->anzPasses = satAct->anzPasses + 1;
 }

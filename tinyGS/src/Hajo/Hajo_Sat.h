@@ -59,6 +59,7 @@ struct  Satellite {
     char        satNum[6];                      // sat number as character
     char        params[200];
     TLE         tle;
+    uint        anzPasses = 0;
     Satellite*  next;
     Passes      nextPasses;
     Passes*     frontPass = NULL;
@@ -74,7 +75,7 @@ struct Scedule {
 
 // scedule times for checks
 double      nextScedTime = 0;
-double      actScedEnd   = 0;
+passinfoH   ongoingpass;
 
 class HajoSat
 {
