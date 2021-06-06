@@ -179,8 +179,8 @@ void setup()
   // T-BEAM V1 has !
   Log::console(PSTR("Total heap: %d"), ESP.getHeapSize());
   Log::console(PSTR("Free heap: %d"), ESP.getFreeHeap());
-  Log::console(PSTR("Total PSRAM: %d"), ESP.getPsramSize());
-  Log::console(PSTR("Free PSRAM: %d"), ESP.getFreePsram());
+ // Log::console(PSTR("Total PSRAM: %d"), ESP.getPsramSize());
+ // Log::console(PSTR("Free PSRAM: %d"), ESP.getFreePsram());
 }
 
 void loop() {  

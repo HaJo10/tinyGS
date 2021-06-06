@@ -126,9 +126,8 @@ void HajoSat::autoSat() {
 void HajoSat::loadNextPasses() {
     if ( satAdrNextLoadPass == NULL ) satAdrNextLoadPass = satFront;
 
-    Log::console(PSTR("load next passes: %s"), satAdrNextLoadPass->satNum);
-
     if ( satAdrNextLoadPass->anzPasses < threshholdLoadpasses ) {
+        Log::console(PSTR("load next passes: %s"), satAdrNextLoadPass->satNum);
         getNextCrossings( satAdrNextLoadPass->satNum, satAdrNextLoadPass );
     }
     
