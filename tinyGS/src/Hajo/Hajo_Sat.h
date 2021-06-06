@@ -68,7 +68,7 @@ struct  Satellite {
 
 // LL scedule for sats
 struct Scedule {
-    passinfoH    overpass;
+    passinfoH   overpass;
     Satellite*  satAdr;
     struct      Scedule* next;  
 };
@@ -76,6 +76,19 @@ struct Scedule {
 // scedule times for checks
 double      nextScedTime = 0;
 passinfoH   ongoingpass;
+
+time_t      startMaint;                     // Start / Ende Maintanance Fenster (nachladen TLE, next passes...)
+time_t      endMaint;                       // Start: Ende akt pass + 2 min, Ende next pass begin - 5 min
+int         delayMaint          = 2 * 60;
+int         stopMaintbefore     = 5 * 60;
+Satellite*  satAdrNextLoadTLE   = NULL;
+Satellite*  satAdrNextLoadPass  = NULL;
+
+time_t      timeLastTLEload = 0;
+int         delayRefreshTLE = 8 * 60 * 60;  // 8 h 
+
+int         threshholdLoadpasses = 3;       // load next passes when less than this remaining
+
 
 class HajoSat
 {
@@ -102,6 +115,9 @@ class HajoSat
         static void enqueueSced(Satellite* sat);
         static void buildScedOverpass(Satellite* sat, passinfoH &newpassinfo);
         static time_t convertToUTC(double jdTime);
+
+        static void refreshTLE();
+        static void loadNextPasses();
 };
 
 #endif

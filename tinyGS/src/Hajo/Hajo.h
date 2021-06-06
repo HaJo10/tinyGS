@@ -13,6 +13,7 @@
 
 extern Status status;
 
+
 class HajoSat 
 {
     public:

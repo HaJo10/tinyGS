@@ -34,8 +34,6 @@ const char  *formatTLE   = "&FORMAT=TLE";
 
 String      allTLE[50][3];
 
-uint32_t    last_tle_read_time_ms = 0;
-
 byte        passes;
 const char  selBand = '4';
 
@@ -63,19 +61,15 @@ void HajoSat::autoSat() {
     
     jetzt = time(NULL);
     
-    if (last_tle_read_time_ms == 0) {
-
-        if (satFront == NULL) {
-            // initialize Sat structure
-            loadSats();
-            Log::console(PSTR("Total heap: %d"), ESP.getHeapSize());
-            Log::console(PSTR("Free heap: %d"), ESP.getFreeHeap());
-            Log::console(PSTR("Total PSRAM: %d"), ESP.getPsramSize());
-            Log::console(PSTR("Free PSRAM: %d"), ESP.getFreePsram());
-        }
+    if (satFront == NULL) {
+        // initialize Sat structure
+        loadSats();
+        Log::console(PSTR("Total heap: %d"), ESP.getHeapSize());
+        Log::console(PSTR("Free heap: %d"), ESP.getFreeHeap());
+        Log::console(PSTR("Total PSRAM: %d"), ESP.getPsramSize());
+        Log::console(PSTR("Free PSRAM: %d"), ESP.getFreePsram());
 
         Serial.println("AutoSat");
-        last_tle_read_time_ms = millis();
 
         time_t  rawtime;
         struct  tm timeinfo;
@@ -113,9 +107,48 @@ void HajoSat::autoSat() {
         return;     
     } else {
         // all prepared let's scedule
-        if ( scedFront == NULL ) return;     // no scedules
+        if ( scedFront != NULL ) sceduleNextSat();
 
-        sceduleNextSat();
+        // some maintennace possible + requested ?
+        if ( startMaint > endMaint ) return;    // no maint window
+
+        // TLEs to be updated?
+        if ( jetzt > (timeLastTLEload + delayRefreshTLE) ) {
+            refreshTLE(); 
+            return; 
+        }
+
+        // load new passes if necessary
+        loadNextPasses();
+    }
+}
+
+void HajoSat::loadNextPasses() {
+    if ( satAdrNextLoadPass == NULL ) satAdrNextLoadPass = satFront;
+
+    Log::console(PSTR("load next passes: %s"), satAdrNextLoadPass->satNum);
+
+    if ( satAdrNextLoadPass->anzPasses < threshholdLoadpasses ) {
+        getNextCrossings( satAdrNextLoadPass->satNum, satAdrNextLoadPass );
+    }
+    
+    satAdrNextLoadPass = satAdrNextLoadPass->next;
+    if ( satAdrNextLoadPass == NULL ) {
+
+    }
+}
+
+void HajoSat::refreshTLE() {
+
+    if ( satAdrNextLoadTLE == NULL ) satAdrNextLoadTLE = satFront;
+
+    Log::console(PSTR("refresh TLE: %s"), satAdrNextLoadTLE->satNum);
+
+    getTleData(satAdrNextLoadTLE->satNum, satAdrNextLoadTLE);
+
+    satAdrNextLoadTLE = satAdrNextLoadTLE->next;
+    if ( satAdrNextLoadTLE == NULL ) {
+        timeLastTLEload = jetzt;
     }
 }
 
@@ -168,6 +201,9 @@ void HajoSat::sceduleSat() {
 
     nextScedTime = scedFront->overpass.jdstartUTC;
     ongoingpass  = scedFront->overpass;
+
+    startMaint  = scedFront->overpass.jdstartUTC + delayMaint;
+    endMaint    = scedFront->next->overpass.jdstopUTC - stopMaintbefore;
 
     // scedule löschen
     Scedule* delNode    = scedFront;
@@ -303,6 +339,7 @@ void HajoSat::loadSats() {
         getNextCrossings(satNoChar, satRear);
         printAllSatInfo();
     };
+    timeLastTLEload = jetzt;
 }
 
 void HajoSat::printSceduleTable() {
