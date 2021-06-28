@@ -226,7 +226,7 @@ void loop() {
   }
 
   // hajo Batteriespannung messen, Sat-Scedule ...
-  HajoSat::control();
+  //HajoSat::control();
 
   // connected
 
@@ -244,7 +244,8 @@ void setupNTP()
   NTP.settimeSyncThreshold (1000); // Sync only if calculated offset absolute value is greater than 1 ms
   NTP.setMaxNumSyncRetry (2); // 2 resync trials if accuracy not reached
   NTP.begin (ntpServer); // Start NTP client
-  Serial.printf ("NTP started");
+  Serial.printf ("NTP started ");
+  Serial.printf (" %s ", configManager.getTZ() );
   
   time_t startedSync = millis ();
   while (NTP.syncStatus() != syncd && millis() - startedSync < 5000) // Wait 5 seconds to get sync

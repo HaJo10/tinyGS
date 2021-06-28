@@ -433,8 +433,8 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
     ConfigManager::getInstance().setModemStartup(buff);
   }
 
-  //if (!strcmp(command, commandBegine))
-  if (!strcmp(command, "beginH"))
+  if (!strcmp(command, commandBegine))
+  //if (!strcmp(command, "beginH"))
   {
     size_t size = JSON_ARRAY_SIZE(10) + 10 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(16) + JSON_ARRAY_SIZE(8) + JSON_ARRAY_SIZE(8) + 64;
     DynamicJsonDocument doc(size);
@@ -574,7 +574,7 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
   }
 
   // Set frequency offset
-  if (!strcmp(command, commandGoToSleep))
+  if (!strcmp(command, commandSetFreqOffset))
   {
     if (length < 1)
       return;

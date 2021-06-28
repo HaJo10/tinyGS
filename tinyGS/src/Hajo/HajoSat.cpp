@@ -16,8 +16,8 @@
 using namespace std;
 
 Sgp4 sat;
-unsigned long unixtime = 1558950400;
-int  timezone = 1 ;  //utc + 1 oder 2 Winter - Sommer >> Sommer-/Winterzeit intern desw 1
+unsigned long unixtime = 0;
+int  timezone = 2 ;  //utc + 1 oder 2 Winter - Sommer >> Sommer-/Winterzeit intern desw 1
 int  year; int mon; int day; int hr; int minute; double sec;
 
 //                                Norbi  SDS    FEES   FEES    ShriShakti
@@ -53,6 +53,7 @@ struct      Scedule*    scedRear  = NULL;
 #include <iostream>
 #include <sys/time.h>
 #include <ctime> 
+#include <cstdlib>
 
 time_t      jetzt;
 
@@ -70,6 +71,11 @@ void HajoSat::autoSat() {
         Log::console(PSTR("Free PSRAM: %d"), ESP.getFreePsram());
 
         Serial.println("AutoSat");
+
+        strtok(NULL, "/"); // cmnd
+        const char *timezoneConv = ConfigManager::getInstance().getTZ();
+        
+        setenv("TZ", ConfigManager::getInstance().getTZ(), true );
 
         time_t  rawtime;
         struct  tm timeinfo;
@@ -354,7 +360,7 @@ void HajoSat::printSceduleTable() {
     while(temp != NULL) {
         tempSat = temp->satAdr;
         datum = time_t(temp->overpass.jdstartUTC);
-        timeinfo = *localtime(&datum);
+        timeinfo = *gmtime(&datum);
         Log::console(PSTR("overpass: %5s %u "), tempSat->satNum, temp->overpass.jdstartUTC );
         Log::console(PSTR("  Start: az= %6s ° %s "), String(temp->overpass.azstart), asctime(&timeinfo) );
         datum = time_t(temp->overpass.jdmaxUTC);
@@ -402,14 +408,14 @@ void HajoSat::printPassInfo(Passes* frontPass) {
     struct Passes* temp = frontPass;
 
     while(temp != NULL) {
-        invjday(temp->overpass.jdstart ,timezone ,true , year, mon, day, hr, min, sec);
+        invjday(temp->overpass.jdstart ,timezone , false , year, mon, day, hr, min, sec);
         Serial.println("Overpass " + String(day) + ' ' + String(mon) + ' ' + String(year));
         Serial.println("  Start: az=" + String(temp->overpass.azstart) + "° " + String(hr) + ':' + String(min) + ':' + String(sec));
         
-        invjday(temp->overpass.jdmax ,timezone ,true , year, mon, day, hr, min, sec);
+        invjday(temp->overpass.jdmax ,timezone , false , year, mon, day, hr, min, sec);
         Serial.println("  Max: elev=" + String(temp->overpass.maxelevation) + "° " + String(hr) + ':' + String(min) + ':' + String(sec));
         
-        invjday(temp->overpass.jdstop ,timezone ,true , year, mon, day, hr, min, sec);
+        invjday(temp->overpass.jdstop ,timezone , false , year, mon, day, hr, min, sec);
         Serial.println("  Stop: az=" + String(temp->overpass.azstop) + "° " + String(hr) + ':' + String(min) + ':' + String(sec));
 
         temp = temp->next;
