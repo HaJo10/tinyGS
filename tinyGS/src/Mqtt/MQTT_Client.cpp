@@ -433,8 +433,8 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
     ConfigManager::getInstance().setModemStartup(buff);
   }
 
-  if (!strcmp(command, commandBegine))
-  //if (!strcmp(command, "beginH"))
+  //if (!strcmp(command, commandBegine))
+  if (!strcmp(command, "beginH"))
   {
     size_t size = JSON_ARRAY_SIZE(10) + 10 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(16) + JSON_ARRAY_SIZE(8) + JSON_ARRAY_SIZE(8) + 64;
     DynamicJsonDocument doc(size);
@@ -744,6 +744,7 @@ void MQTT_Client::remoteGoToSleep(char *payload, size_t payload_len)
   //uint8_t  int_pin = doc [1];   // 99 no int pin
 
   Log::debug(PSTR("light_sleep_enter"));
+  Log::console(PSTR ("sleep_seconds: %u"), sleep_seconds);    //hajo
   esp_sleep_enable_timer_wakeup(sleep_seconds * 1000000); //30 seconds
   //esp_sleep_enable_ext0_wakeup(int_pin,0);
   delay(100);

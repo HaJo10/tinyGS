@@ -17,7 +17,7 @@ using namespace std;
 
 Sgp4 sat;
 unsigned long unixtime = 0;
-int  timezone = 2 ;  //utc + 1 oder 2 Winter - Sommer >> Sommer-/Winterzeit intern desw 1
+int  timezone = 1 ;  //utc + 1 oder 2 Winter - Sommer >> Sommer-/Winterzeit intern desw 1
 int  year; int mon; int day; int hr; int minute; double sec;
 
 //                                Norbi  SDS    FEES   FEES    ShriShakti
@@ -111,7 +111,8 @@ void HajoSat::autoSat() {
         }
         printSceduleTable();
         return;     
-    } else {
+    } else {    
+        jetzt = time(NULL);
         // all prepared let's scedule
         if ( scedFront != NULL ) sceduleNextSat();
 
@@ -163,7 +164,8 @@ void HajoSat::sceduleNextSat() {
         sceduleSat();
     }
 
-    if ( scedFront->overpass.jdstartUTC < jetzt ){
+    // wenn aktueller pass beendet nächster Sat 
+    if ( ongoingpass.jdstopUTC < jetzt ){
         sceduleSat();
     }
 }
@@ -175,7 +177,11 @@ void HajoSat::sceduleSat() {
     timeinfo1 = *gmtime(&jetzt);
     timeinfo2 = *gmtime(&scedFront->overpass.jdstartUTC);
     Log::console(PSTR("jetzt/sced : %u %u"), jetzt, scedFront->overpass.jdstartUTC );
-    Log::console(PSTR("jetzt/sced UTC: %s"), asctime(&timeinfo1), asctime(&timeinfo2) );
+    Log::console(PSTR("jetzt/sced UTC: %s %s"), asctime(&timeinfo1), asctime(&timeinfo2) );
+
+    timeinfo1 = *localtime(&jetzt);
+    timeinfo2 = *localtime(&scedFront->overpass.jdstartUTC);
+    Log::console(PSTR("jetzt/sced local: %s %s"), asctime(&timeinfo1), asctime(&timeinfo2) );
 
     if ( scedFront->satAdr == NULL ) {
         Log::console(PSTR("sceduleSat : satAdr = NULL"));
@@ -303,7 +309,7 @@ time_t HajoSat::convertToUTC(double jdTime) {
     struct  tm  timeinfo = {0};
     time_t  utcDate;
 
-    invjday(jdTime, 0, false, year, mon, day, hr, min, sec);
+    invjday(jdTime, 1, false, year, mon, day, hr, min, sec);
 
     timeinfo.tm_year    = year - 1900;
     timeinfo.tm_mon     = mon - 1;

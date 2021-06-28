@@ -226,7 +226,7 @@ void loop() {
   }
 
   // hajo Batteriespannung messen, Sat-Scedule ...
-  //HajoSat::control();
+  HajoSat::control();
 
   // connected
 
