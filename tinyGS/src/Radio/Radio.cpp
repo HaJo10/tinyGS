@@ -226,6 +226,19 @@ void Radio::startRx()
   enableInterrupt();
 }
 
+void Radio::stopRx()
+{
+  // put module back to listen mode
+  if (ConfigManager::getInstance().getBoardConfig().L_SX127X)
+    ((SX1278 *)lora)->sleep();
+  else
+    ((SX1268 *)lora)->sleep();
+
+  // we're ready to receive more packets,
+  // enable interrupt service routine
+  disableInterrupt();
+}
+
 int16_t Radio::sendTx(uint8_t *data, size_t length)
 {
   if (!ConfigManager::getInstance().getAllowTx())

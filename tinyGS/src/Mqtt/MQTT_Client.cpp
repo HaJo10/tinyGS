@@ -26,6 +26,8 @@
 #include "../OTA/OTA.h"
 #include "../Logger/Logger.h"
 
+#include "../Display/Display.h"
+
 MQTT_Client::MQTT_Client()
     : PubSubClient(espClient)
 {
@@ -740,25 +742,51 @@ void MQTT_Client::remoteGoToSleep(char *payload, size_t payload_len)
   DynamicJsonDocument doc(60);
   deserializeJson(doc, payload, payload_len);
 
-  uint16_t sleep_seconds = doc[0];
+  uint16_t sleep_seconds; // = doc[0];
+
+  char *end;
+  errno = 0;
+  long val = strtol(payload, &end, 10);
+  if (errno || end == payload || *end != '\0' || val < 0 || val >= 0x10000) {
+    Log::console(PSTR ("light sleep err: %u %u %s %s"), errno, val, payload, doc);    //hajo
+      return;
+  }
+  sleep_seconds = (uint16_t)val;
+
   //uint8_t  int_pin = doc [1];   // 99 no int pin
 
   Log::debug(PSTR("light_sleep_enter"));
   Log::console(PSTR ("sleep_seconds: %u"), sleep_seconds);    //hajo
+
+  if ( sleep_seconds < 1 ) return;                            //hajo
+  Log::console(PSTR ("sleep sleep_seconds: %u"), sleep_seconds);    //hajo
+//return;
   esp_sleep_enable_timer_wakeup(sleep_seconds * 1000000); //30 seconds
+  
   //esp_sleep_enable_ext0_wakeup(int_pin,0);
   delay(100);
   Serial.flush();
   WiFi.disconnect(true);
+  displayTurnOff();
+
+  // Lora stoppen
+  Radio::getInstance().stopRx();
+
   delay(100);
+
   int ret = esp_light_sleep_start();
   WiFi.disconnect(false);
-  Log::debug(PSTR("light_sleep: %d\n"), ret);
-  // for stations with sleep disable OLED
-  //displayTurnOff();
+  Log::debug(PSTR("light_sleep awoke: %d\n"), ret);
+  Log::console(PSTR("light_sleep awoke: %d\n"), ret);
+  // Lora wieder starten
+  Radio::getInstance().startRx();
+
   delay(500);
   esp_sleep_wakeup_cause_t wakeup_reason;
   wakeup_reason = esp_sleep_get_wakeup_cause();
+
+  //displayInit();      // display wieder aktivieren -> nein, nach erstem sleep ohne display
+  Log::console(PSTR("Wakeup reason: %d \0"), wakeup_reason);   //hajo
 
   switch (wakeup_reason)
   {
@@ -770,6 +798,7 @@ void MQTT_Client::remoteGoToSleep(char *payload, size_t payload_len)
     break;
   case ESP_SLEEP_WAKEUP_TIMER:
     Log::debug(PSTR("Wakeup caused by timer"));
+    Log::console(PSTR("Wakeup caused by timer"));   //hajo
     break;
   case ESP_SLEEP_WAKEUP_TOUCHPAD:
     Log::debug(PSTR("Wakeup caused by touchpad"));
@@ -781,6 +810,8 @@ void MQTT_Client::remoteGoToSleep(char *payload, size_t payload_len)
     Log::debug(PSTR("Wakeup was not caused by deep sleep: %d\n"), wakeup_reason);
     break;
   }
+
+  MQTT_Client::loop();
 }
 
 void MQTT_Client::remoteSetFreqOffset(char *payload, size_t payload_len)

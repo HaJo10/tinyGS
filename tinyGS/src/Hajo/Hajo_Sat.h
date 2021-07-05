@@ -118,6 +118,9 @@ class HajoSat
 
         static void refreshTLE();
         static void loadNextPasses();
+        static void checkForSleep();
+
+        static void shutOffGPS();
 };
 
 #endif

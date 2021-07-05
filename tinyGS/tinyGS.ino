@@ -278,6 +278,7 @@ void checkButton()
   else {
     unsigned long elapsedTime = millis() - buttPressedStart;
     if (elapsedTime > 30 && elapsedTime < 1000) // short press
+      displayInit();            // hajo Display aktivieren, kann durch sleep off sein!
       displayNextFrame();
     buttPressedStart = 0;
   }

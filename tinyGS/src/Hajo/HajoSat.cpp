@@ -13,6 +13,9 @@
 #include "ArduinoJson.h"
 #include "satInfo.h"
 
+#include <axp20x.h>
+AXP20X_Class axp;
+
 using namespace std;
 
 Sgp4 sat;
@@ -31,6 +34,11 @@ const int   satsToLookFor866[] = {46492, 47463,  47467, 47524, 47948};
 //const char  *urlC      = "https://celestrak.com/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE";
 const char  *urlCeles    = "https://celestrak.com/NORAD/elements/gp.php?CATNR=";
 const char  *formatTLE   = "&FORMAT=TLE";
+
+const int   secondsBeforeSleep = 60;
+const int   secondsAfterSleep  = 120;
+const int   secondsMaxSleep    = 1800;
+const int   secondsMinSleep    = 60;
 
 String      allTLE[50][3];
 
@@ -56,6 +64,7 @@ struct      Scedule*    scedRear  = NULL;
 #include <cstdlib>
 
 time_t      jetzt;
+time_t      endLastsleep;
 
 void HajoSat::autoSat() {
     // TLE's laden
@@ -63,6 +72,9 @@ void HajoSat::autoSat() {
     jetzt = time(NULL);
     
     if (satFront == NULL) {
+        // shut off GPS ...
+        shutOffGPS();
+        
         // initialize Sat structure
         loadSats();
         Log::console(PSTR("Total heap: %d"), ESP.getHeapSize());
@@ -71,6 +83,8 @@ void HajoSat::autoSat() {
         Log::console(PSTR("Free PSRAM: %d"), ESP.getFreePsram());
 
         Serial.println("AutoSat");
+
+        Log::console(PSTR("station: %s"), (String(ConfigManager::getInstance().getThingName())));
 
         strtok(NULL, "/"); // cmnd
         const char *timezoneConv = ConfigManager::getInstance().getTZ();
@@ -95,8 +109,6 @@ void HajoSat::autoSat() {
         Log::console(PSTR("timeinfo jahr: %d"), timeinfo.tm_year );
         Log::console(PSTR("jetzt: %u"), jetzt );
 
-        
-
         struct timeval time_now{};
         
         gettimeofday(&time_now, nullptr);
@@ -110,6 +122,7 @@ void HajoSat::autoSat() {
             setSceduleTable();
         }
         printSceduleTable();
+        endLastsleep = time(NULL) + 120;
         return;     
     } else {    
         jetzt = time(NULL);
@@ -127,7 +140,68 @@ void HajoSat::autoSat() {
 
         // load new passes if necessary
         loadNextPasses();
+
+        // start sleep-mode if possible
+        checkForSleep();
+
     }
+}
+
+void HajoSat::shutOffGPS() {
+    if(axp.begin(Wire, AXP192_SLAVE_ADDRESS) == AXP_FAIL) {
+        Log::console(PSTR("failed to initialize communication with AXP192"));
+        return;
+    }
+
+    if(axp.setPowerOutPut(AXP192_LDO3, AXP202_OFF) == AXP_PASS) {
+        Log::console(PSTR("turned off GPS module"));
+    } else {
+        Log::console(PSTR("failed to turn off GPS module"));
+    }
+}
+
+void HajoSat::checkForSleep() {
+    
+    unsigned long int secDiff;
+
+    char              buffer[10];
+    unsigned int      laenge;
+
+    jetzt = time(NULL);
+
+    if ( jetzt < endLastsleep ) return;         //damit nicht nahtlos im sleep
+    // ongoing pass = aktueller bzw anstehender pass => evtl schlafen bis dahin
+    // sleep nur wenn Start - secondsAfterSleep nicht erreicht
+    if ( jetzt > (ongoingpass.jdstartUTC - secondsAfterSleep)  ) return;
+    // sleep nur wenn Ende + secondsBeforeSleep erreicht
+    //if ( jetzt < (ongoingpass.jdstopUTC + secondsBeforeSleep) ) return;
+ConfigManager& configManager = ConfigManager::getInstance();
+Log::console(PSTR("station: %s"), String(configManager.getThingName()) );
+    secDiff    = (ongoingpass.jdstartUTC - secondsAfterSleep) - jetzt;
+    if ( secDiff < 1 ) return;
+
+    Log::console(PSTR("sleep start jetzt secDiff : %u %u %u"), ongoingpass.jdstartUTC, jetzt, secDiff );
+
+    if ( secDiff < secondsMinSleep ) return; // min xx sec schlafen
+
+    if ( secDiff > secondsMaxSleep ) { 
+        secDiff = secondsMaxSleep; 
+    }
+
+    sprintf (buffer, "%d", secDiff);
+    laenge = strlen(buffer);
+    buffer[laenge] = '\0';
+    //Log::console(PSTR("sleep : %s %u"), buffer, laenge );
+
+    if ( secDiff < secondsMinSleep) return;
+
+    endLastsleep = jetzt + secDiff + secondsBeforeSleep;
+
+    uint8_t * payload;
+
+    payload = reinterpret_cast<uint8_t *>(static_cast<char *>(buffer));
+    char topic[46] = "tinygs/1705665548/DE_72116_433_2/cmnd/sleep\0";
+    MQTT_Client::getInstance().manageMQTTData(topic, payload, laenge);
 }
 
 void HajoSat::loadNextPasses() {
@@ -335,12 +409,12 @@ void HajoSat::loadSats() {
     for (int i = 0; i < anzSats; i++) {
         // Sat-Nr extrahieren
         pointer = strstr(&sats4xx[i][0], sucheNORAD);
-        Log::console(PSTR("i: %d norad: %d \n"), i, pointer);
+        //Log::console(PSTR("i: %d norad: %d \n"), i, pointer);
         if ( !pointer ) continue;
         pointer += 7;   //pointer auf Norad-Nummer stellen
         strncpy(satNoChar, pointer, 5);
         satNoChar[5] = 0;
-        Log::console(PSTR("i: %d norad: %d no: %s \n"), i, pointer, satNoChar);
+        Log::console(PSTR("i: %d norad no: %s \n"), i, satNoChar);
 
         // linked list für Satelliten anlegen/erweitern
         addSat(i, satNoChar);
