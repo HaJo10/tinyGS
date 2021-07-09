@@ -20,7 +20,7 @@ void HajoSat::control() {
         //vBat(boardNr);
 
 
-        autoSat();
+        autoSat(boardNr);
     };
 
     //autoSat();

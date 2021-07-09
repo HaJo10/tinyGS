@@ -95,7 +95,7 @@ class HajoSat
     private:
 
     public:
-        static void autoSat();
+        static void autoSat(int boardNr);
         static void sceduleNextSat();
         static void sceduleSat();
 
@@ -120,7 +120,8 @@ class HajoSat
         static void loadNextPasses();
         static void checkForSleep();
 
-        static void shutOffGPS();
+        static void shutOffGPS(int boardNr);
+        static void buildCommands();
 };
 
 #endif

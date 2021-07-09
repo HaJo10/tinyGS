@@ -7,6 +7,11 @@
 ;
 ; Please visit documentation for the other options and examples
 ; https://docs.platformio.org/page/projectconf.html
+;
+;
+;   for TTGO T-Beam
+;
+;
 
 [platformio]
 src_dir = tinyGS
@@ -20,17 +25,25 @@ build_flags =
  -DRADIOLIB_GODMODE=1
  -DIOTWEBCONF_DEBUG_DISABLED=1
  -DARDUINOJSON_USE_LONG_LONG=1
-;    -DBOARD_HAS_PSRAM
-;    -mfix-esp32-psram-cache-issue
+    -DBOARD_HAS_PSRAM
+    -mfix-esp32-psram-cache-issue
 
 # Uncomment these 2 lines by deleting ";" and edit as needed to upload through OTA
-upload_protocol = espota
+;upload_protocol = espota
 ;upload_port = 192.168.178.44    // DE_72116_915
-upload_port = 192.168.178.45    // DE_72116_433
+;upload_port = 192.168.178.45    // DE_72116_433
 ;upload_port = 192.168.178.46    // DE_72116_433_2
 ;upload_port = 192.168.178.47    // DE_72116_433_3
 
 
+[env:T-Beam]
+platform = espressif32
+board = ttgo-t-beam
+board_build.mcu = esp32
+board_build.partitions = min_spiffs.csv
+framework = arduino
+monitor_speed = 115200
+upload_speed = 921600
 
 lib_deps =
     ;https://github.com/meshtastic/AXP202X_Library.git#8404abb6d4b486748636bc6ad72d2a47baaf5460
@@ -41,19 +54,11 @@ lib_deps =
 	aharshac/StringSplitter@^1.0.0
 	bblanchon/ArduinoJson@^6.18.0
 
-[env:TTGO-Lora32-V21]
- platform = espressif32
- board = ttgo-lora32-v21
- board_build.mcu = esp32
- board_build.partitions = min_spiffs.csv
- framework = arduino
- monitor_speed = 115200
- upload_speed = 921600
 
 ; NOTE: There is no need to change anything below here, the board is configured through the Web panel
 ; Only make changes if you know what you are doing
 ;[env:heltec_wifi_lora_32]
-;platform = espressif32
+,platform = espressif32
 ;board = heltec_wifi_lora_32
 ;framework = arduino
 ;monitor_speed = 115200

@@ -22,7 +22,7 @@ class HajoSat
         static void readAXP192();
         static void readAnaloginput();
 
-        static void autoSat();
+        static void autoSat(int boardNr);
 };
 
 #endif

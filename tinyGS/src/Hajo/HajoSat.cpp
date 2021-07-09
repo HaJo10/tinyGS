@@ -66,14 +66,21 @@ struct      Scedule*    scedRear  = NULL;
 time_t      jetzt;
 time_t      endLastsleep;
 
-void HajoSat::autoSat() {
+char        stationName[128];
+char        cmndBegin[46];
+char        cmndSleep[46];
+
+void HajoSat::autoSat(int boardNr) {
     // TLE's laden
     
     jetzt = time(NULL);
     
     if (satFront == NULL) {
         // shut off GPS ...
-        shutOffGPS();
+        shutOffGPS(boardNr);
+
+        // set station name auslesen, commands bauen
+        buildCommands();
         
         // initialize Sat structure
         loadSats();
@@ -83,8 +90,6 @@ void HajoSat::autoSat() {
         Log::console(PSTR("Free PSRAM: %d"), ESP.getFreePsram());
 
         Serial.println("AutoSat");
-
-        Log::console(PSTR("station: %s"), (String(ConfigManager::getInstance().getThingName())));
 
         strtok(NULL, "/"); // cmnd
         const char *timezoneConv = ConfigManager::getInstance().getTZ();
@@ -122,7 +127,7 @@ void HajoSat::autoSat() {
             setSceduleTable();
         }
         printSceduleTable();
-        endLastsleep = time(NULL) + 120;
+        endLastsleep = time(NULL) + secondsBeforeSleep;
         return;     
     } else {    
         jetzt = time(NULL);
@@ -147,7 +152,36 @@ void HajoSat::autoSat() {
     }
 }
 
-void HajoSat::shutOffGPS() {
+void HajoSat::buildCommands() {
+    // set station name auslesen, commands bauen
+
+    unsigned int    laenge;
+    //char topic[46] = "tinygs/1705665548/DE_72116_433_2/cmnd/sleep\0";
+    char cmdStart[20] = "tinygs/1705665548/";
+    char cmdSleep[20] = "/cmnd/sleep\0";
+    char cmdBegin[20] = "/cmnd/beginH\0";
+
+    
+    ConfigManager& configManager = ConfigManager::getInstance();
+    Log::console(PSTR("station: %s"), configManager.getThingName() );
+    strcpy(stationName, configManager.getThingName() );
+    laenge = strlen(stationName);
+    Log::console(PSTR("station, lg: %s %u"), stationName, laenge);
+
+    strcpy(cmndBegin, cmdStart);
+    strcat(cmndBegin, stationName);
+    strcat(cmndBegin, cmdBegin);
+    Log::console(PSTR("command begin: %s"), cmndBegin);
+
+    strcpy(cmndSleep, cmdStart);
+    strcat(cmndSleep, stationName);
+    strcat(cmndSleep, cmdSleep);
+    Log::console(PSTR("command sleep: %s"), cmndSleep);
+}
+
+void HajoSat::shutOffGPS(int boardNr) {
+    if ( boardNr != 14 ) return;      // 14 = T-Beam
+
     if(axp.begin(Wire, AXP192_SLAVE_ADDRESS) == AXP_FAIL) {
         Log::console(PSTR("failed to initialize communication with AXP192"));
         return;
@@ -173,10 +207,9 @@ void HajoSat::checkForSleep() {
     // ongoing pass = aktueller bzw anstehender pass => evtl schlafen bis dahin
     // sleep nur wenn Start - secondsAfterSleep nicht erreicht
     if ( jetzt > (ongoingpass.jdstartUTC - secondsAfterSleep)  ) return;
+
     // sleep nur wenn Ende + secondsBeforeSleep erreicht
     //if ( jetzt < (ongoingpass.jdstopUTC + secondsBeforeSleep) ) return;
-ConfigManager& configManager = ConfigManager::getInstance();
-Log::console(PSTR("station: %s"), String(configManager.getThingName()) );
     secDiff    = (ongoingpass.jdstartUTC - secondsAfterSleep) - jetzt;
     if ( secDiff < 1 ) return;
 
@@ -200,7 +233,11 @@ Log::console(PSTR("station: %s"), String(configManager.getThingName()) );
     uint8_t * payload;
 
     payload = reinterpret_cast<uint8_t *>(static_cast<char *>(buffer));
+
     char topic[46] = "tinygs/1705665548/DE_72116_433_2/cmnd/sleep\0";
+    
+    // comand mit richtigem station name kopieren
+    strcpy(topic, cmndSleep);       // topic wird modifiziert!!
     MQTT_Client::getInstance().manageMQTTData(topic, payload, laenge);
 }
 
@@ -248,6 +285,28 @@ void HajoSat::sceduleSat() {
     struct  tm timeinfo1;
     struct  tm timeinfo2;
 
+    jetzt = time(NULL);
+
+    // wenn start next-ende < jetzt -> scedule löschen
+    if ( scedFront->overpass.jdstopUTC < jetzt ) {
+        // scedule löschen
+        Scedule* delNode    = scedFront;
+        scedFront           = scedFront->next;
+        delete delNode;
+        return;
+    }
+
+    // laufender pass-ende > next-anfang  -> höhere max elevation entscheidet
+    if ( ongoingpass.jdstopUTC > scedFront->overpass.jdstartUTC &&
+         ongoingpass.jdstopUTC > jetzt ) {
+        if ( ongoingpass.maxelevation > scedFront->overpass.maxelevation ) {
+            // laufender pass hat höhere elevation -> weiter laufen lassen
+            Log::console(PSTR("ongoing   max ele: %6s"), String(ongoingpass.maxelevation));
+            Log::console(PSTR("next pass max ele: %6s"), String(scedFront->overpass.maxelevation));
+            return;
+        }
+    }
+
     timeinfo1 = *gmtime(&jetzt);
     timeinfo2 = *gmtime(&scedFront->overpass.jdstartUTC);
     Log::console(PSTR("jetzt/sced : %u %u"), jetzt, scedFront->overpass.jdstartUTC );
@@ -262,10 +321,6 @@ void HajoSat::sceduleSat() {
         return;
     }
 
-    // void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int length)
-    // topic: tinygs/1705665548/DE_72116_433_2/cmnd/begin
-    //char    topic[46] = "tinygs/1705665548/DE_72116_433_2/cmnd/begine\0";
-    char    topic[46] = "tinygs/1705665548/DE_72116_433_2/cmnd/beginH\0";
     unsigned int  laenge;
     struct Satellite* tempSat = scedFront->satAdr;
 
@@ -279,9 +334,12 @@ void HajoSat::sceduleSat() {
 
     payload = reinterpret_cast<uint8_t *>(static_cast<char *>(para));
     
-    Log::console(PSTR("Länge: %u"), laenge);
-    Log::console(PSTR("neue params: %s"), tempSat->params);
+    //Log::console(PSTR("Länge: %u"), laenge);
+    //Log::console(PSTR("neue params: %s"), tempSat->params);
 
+    char    topic[46] = "tinygs/1705665548/DE_72116_433_2/cmnd/beginH\0";
+    // comand mit richtigem station name kopieren
+    strcpy(topic, cmndBegin);       // topic wird modifiziert!!
     MQTT_Client::getInstance().manageMQTTData(topic, payload, laenge);
 
     nextScedTime = scedFront->overpass.jdstartUTC;
@@ -422,7 +480,7 @@ void HajoSat::loadSats() {
         getTleData( satNoChar, satRear );
         // next passes laden
         getNextCrossings(satNoChar, satRear);
-        printAllSatInfo();
+        //printAllSatInfo();
     };
     timeLastTLEload = jetzt;
 }

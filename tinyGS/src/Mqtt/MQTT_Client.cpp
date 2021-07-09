@@ -435,7 +435,7 @@ void MQTT_Client::manageMQTTData(char *topic, uint8_t *payload, unsigned int len
     ConfigManager::getInstance().setModemStartup(buff);
   }
 
-  //if (!strcmp(command, commandBegine))
+  //if (!strcmp(command, commandBegin))
   if (!strcmp(command, "beginH"))
   {
     size_t size = JSON_ARRAY_SIZE(10) + 10 * JSON_OBJECT_SIZE(2) + JSON_OBJECT_SIZE(16) + JSON_ARRAY_SIZE(8) + JSON_ARRAY_SIZE(8) + 64;
@@ -811,7 +811,8 @@ void MQTT_Client::remoteGoToSleep(char *payload, size_t payload_len)
     break;
   }
 
-  MQTT_Client::loop();
+  //MQTT_Client::loop();
+  MQTT_Client::reconnect();
 }
 
 void MQTT_Client::remoteSetFreqOffset(char *payload, size_t payload_len)

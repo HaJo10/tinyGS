@@ -64,7 +64,7 @@ struct TextFrame {
 };
 
 struct Status {
-  const uint32_t version = 21052606; // version year month day release
+  const uint32_t version = 21052608; // version year month day release + xx from hajo
   const char* git_version = GIT_VERSION;
   bool mqtt_connected = false;
   bool radio_ready = false;
