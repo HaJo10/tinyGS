@@ -17,7 +17,7 @@ void HajoSat::control() {
         }
 
         last_read_time_ms = millis();
-        //vBat(boardNr);
+        vBat(boardNr);
 
 
         autoSat(boardNr);

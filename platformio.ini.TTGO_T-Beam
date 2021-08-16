@@ -29,11 +29,11 @@ build_flags =
     -mfix-esp32-psram-cache-issue
 
 # Uncomment these 2 lines by deleting ";" and edit as needed to upload through OTA
-;upload_protocol = espota
-;upload_port = 192.168.178.44    // DE_72116_915
-;upload_port = 192.168.178.45    // DE_72116_433
-;upload_port = 192.168.178.46    // DE_72116_433_2
-;upload_port = 192.168.178.47    // DE_72116_433_3
+upload_protocol = espota
+;;upload_port = 192.168.178.44    // DE_72116_915    TGO-Lora32-V21
+;;upload_port = 192.168.178.45    // DE_72116_433    TGO-Lora32-V21
+;upload_port = 192.168.178.46    // DE_72116_433_2  T-Beam
+upload_port = 192.168.178.47    // DE_72116_433_3  t-Beam
 
 
 [env:T-Beam]

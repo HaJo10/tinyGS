@@ -76,15 +76,18 @@ void MQTT_Client::loop()
       int averageVbat = 0;
       for (int i = 0; i < 20; i++)
       {
-        totalVbat += analogRead(36);
+        totalVbat += analogRead(35);
       }
       averageVbat = totalVbat / 20;
+      averageVbat = averageVbat * 2;    //Hajo
+      status.vBat = ( averageVbat *3.3 ) / 4095;        //Hajo
       StaticJsonDocument<128> doc;
       doc["Vbat"] = averageVbat;
       doc["Mem"] = ESP.getFreeHeap();
       char buffer[256];
       serializeJson(doc, buffer);
       Log::debug(PSTR("%s"), buffer);
+      Log::console(PSTR("%s"), buffer);     //Hajo
       publish(buildTopic(teleTopic, topicPing).c_str(), buffer, false);
     }
   }

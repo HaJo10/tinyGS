@@ -145,6 +145,7 @@ void ConfigManager::handleDashboard()
   s += "<tr><td>WiFi </td><td>" + String(WiFi.isConnected() ? "<span class='G'>CONNECTED</span>" : "<span class='R'>NOT CONNECTED</span>") + "</td></tr>";
   s += "<tr><td>Radio </td><td>" + String(Radio::getInstance().isReady() ? "<span class='G'>READY</span>" : "<span class='R'>NOT READY</span>") + "</td></tr>";
   s += "<tr><td>Test Mode </td><td>" + String(getTestMode() ? "ENABLED" : "DISABLED") + "</td></tr>";
+  s += "<tr><td>VBat </td><td>" + String(status.vBat) + "</td></tr>";    //Hajo
   //s += "<tr><td>Uptime </td><td>" + // process and update in js + "</td></tr>";
   s += F("</table></div>");
   s += F("<div class=\"card\"><h3>Modem Configuration</h3><table>");

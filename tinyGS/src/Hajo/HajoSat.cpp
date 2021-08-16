@@ -130,6 +130,7 @@ void HajoSat::autoSat(int boardNr) {
         endLastsleep = time(NULL) + secondsBeforeSleep;
         return;     
     } else {    
+        //setCpuFrequencyMhz(80);
         jetzt = time(NULL);
         // all prepared let's scedule
         if ( scedFront != NULL ) sceduleNextSat();

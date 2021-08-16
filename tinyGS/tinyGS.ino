@@ -237,7 +237,7 @@ void loop() {
 
 void setupNTP()
 {
-  NTP.setInterval (120); // Sync each 2 minutes
+  NTP.setInterval (110); // Sync each 2 minutes
   NTP.setTimeZone (configManager.getTZ ()); // Get TX from config manager
   NTP.onNTPSyncEvent (ntp_cb); // Register event callback
   NTP.setMinSyncAccuracy (2000); // Sync accuracy target is 2 ms
